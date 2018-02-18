@@ -2,8 +2,6 @@ AWSTemplateFormatVersion: 2010-09-09
 Transform:
 - AWS::CodeStar
 
-Parameters:
-
 Resources:
   PapersubmissionUIBucket:
     Type: AWS::S3::Bucket
