@@ -1,6 +1,5 @@
 AWSTemplateFormatVersion: 2010-09-09
 Transform:
-- AWS::Serverless-2016-10-31
 - AWS::CodeStar
 
 Parameters:
@@ -9,17 +8,17 @@ Parameters:
     Description: AWS CodeStar projectID used to associate new resources to team members
 
 Resources:
-  GetHelloWorld:
-    Type: AWS::Serverless::Function
+  PapersubmissionUIBucket:
+    Type: AWS::S3::Bucket
     Properties:
-      Handler: index.get
-      Runtime: nodejs4.3
-      Role:
-        Fn::ImportValue:
-          !Join ['-', [!Ref 'ProjectId', !Ref 'AWS::Region', 'LambdaTrustRole']]
-      Events:
-        GetEvent:
-          Type: Api
-          Properties:
-            Path: /
-            Method: get
+      BucketName: !Join ['.', [!Ref 'AWS::StackName', !Ref 'AWS::AccountId', 'angular-ui', 'oc-papersubmission']]
+      AccessControl: PublicRead
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        ErrorDocument: index.html
+    DeletionPolicy: Delete
+
+Outputs:
+  PapersubmissionBucket:
+    Description: UI S3 Bucket
+    Value: !Ref PapersubmissionUIBucket

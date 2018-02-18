@@ -1,42 +1,31 @@
-Welcome to the AWS CodeStar sample web application
-==================================================
+# PapersubmissionUi
 
-This sample code helps get you started with a simple Node.js web service deployed by AWS CloudFormation to AWS Lambda and Amazon API Gateway.
+This project was generated with [angular-cli](https://github.com/angular/angular-cli) version 1.0.0-beta.28.3.
 
-What's Here
------------
+## Development server
+Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The app will automatically reload if you change any of the source files.
 
-This sample includes:
+## Code scaffolding
 
-* README.md - this file
-* buildspec.yml - this file is used by AWS CodeBuild to package your
-  application for deployment to AWS Lambda
-* index.js - this file contains the sample Node.js code for the web service
-* template.yml - this file contains the AWS Serverless Application Model (AWS SAM) used
-  by AWS CloudFormation to deploy your application to AWS Lambda and Amazon API
-  Gateway.
+Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive/pipe/service/class/module`.
 
+## Build
 
-What Do I Do Next?
-------------------
+Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory. Use the `-prod` flag for a production build.
 
-If you have checked out a local copy of your repository you can start making
-changes to the sample code.  We suggest making a small change to index.js first,
-so you can see how changes pushed to your project's repository are automatically
-picked up by your project pipeline and deployed to AWS Lambda and Amazon API Gateway.
-(You can watch the pipeline progress on your AWS CodeStar project dashboard.)
-Once you've seen how that works, start developing your own code, and have fun!
+## Running unit tests
 
-Learn more about AWS Serverless Application Model (AWS SAM) and how it works here:
-https://github.com/awslabs/serverless-application-model/blob/master/HOWTO.md
+Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
 
-AWS Lambda Developer Guide:
-http://docs.aws.amazon.com/lambda/latest/dg/deploying-lambda-apps.html
+## Running end-to-end tests
 
-Learn more about AWS CodeStar by reading the user guide, and post questions and
-comments about AWS CodeStar on our forum.
+Run `ng e2e` to execute the end-to-end tests via [Protractor](http://www.protractortest.org/).
+Before running the tests make sure you are serving the app via `ng serve`.
 
-AWS CodeStar User Guide:
-http://docs.aws.amazon.com/codestar/latest/userguide/welcome.html
+## Deploying to GitHub Pages
 
-AWS CodeStar Forum: https://forums.aws.amazon.com/forum.jspa?forumID=248
+Run `ng github-pages:deploy` to deploy to GitHub Pages.
+
+## Further help
+
+To get more help on the `angular-cli` use `ng help` or go check out the [Angular-CLI README](https://github.com/angular/angular-cli/blob/master/README.md).
