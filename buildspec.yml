@@ -4,8 +4,8 @@ phases:
   build:
     commands:
       - pip install --upgrade awscli
-      - aws cloudformation package --template template.yml --s3-bucket $S3_BUCKET --output-template template-export.yml
-      - aws cloudformation deploy --template-file template-export.yml --parameter-overrides ProjectId=$PROJECT_ID --stack-name $STACK_NAME --capabilities "CAPABILITY_NAMED_IAM"
+      #- aws cloudformation package --template template.yml --s3-bucket $S3_BUCKET --output-template template-export.yml
+      #- aws cloudformation deploy --template-file template-export.yml --parameter-overrides ProjectId=$PROJECT_ID --stack-name $STACK_NAME --capabilities "CAPABILITY_NAMED_IAM"
       - npm install
       - ng run ngbuild
       - UI_BUCKET=“$(aws cloudformation describe-stacks --stack-name ${STACK_NAME} --query ‘Stacks[?StackName==`${STACK_NAME}`].Outputs[*].{key:OutputKey, value:OutputValue}’ --output text)”
