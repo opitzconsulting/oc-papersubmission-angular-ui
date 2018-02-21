@@ -6,6 +6,7 @@ phases:
       - pip install --upgrade awscli
       - aws cloudformation deploy --template-file template.yml --stack-name $STACK_NAME
       - npm install
+      - npm install -g @angular/cli
       - ng run ngbuild
       - UI_BUCKET=“$(aws cloudformation describe-stacks --stack-name ${STACK_NAME} --query 'Stacks[0].Outputs[?OutputKey==`PapersubmissionBucket`].[OutputValue]' --output text)"
       - aws s3 sync dist "${UI_BUCKET}" --acl public-read --delete
