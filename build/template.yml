@@ -1,3 +1,38 @@
 AWSTemplateFormatVersion: 2010-09-09
 
 Resources:
+  DeveloperGroup:
+    Type: AWS::IAM::Group
+    Properties:
+      GroupName: !Join ['-', [!Ref 'AWS::StackName', 'oc-papersubmission', 'Developer']]
+      Path: "/angular_ui/"
+
+  DeveloperPolicy:
+    Type: "AWS::IAM::ManagedPolicy"
+    Properties:
+      ManagedPolicyName: !Join ['-', [!Ref 'AWS::StackName', 'Developer', 'Policy']]
+      Groups: [!Ref DeveloperGroup]
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          -
+            Effect: "Allow"
+            Action:
+              - "s3:CreateBucket"
+            Resource: !Join ['-', ['arn:aws:s3:::*', !Ref 'AWS::AccountId', 'oc-papersubmission', 'ui']]
+          -
+            Effect: "Allow"
+            Action:
+              - "s3:*"
+            Resource:
+              - !Join ['-', ['arn:aws:s3:::*', !Ref 'AWS::AccountId', 'oc-papersubmission', 'ui']]
+              - !Join ['-', ['arn:aws:s3:::*', !Ref 'AWS::AccountId', 'oc-papersubmission', 'ui/*']]
+          -
+            Effect: "Allow"
+            Action:
+              - "cloudformation:*"
+            Resource:
+              - !Join [':', ['arn:aws:cloudformation:eu-central-1', !Ref 'AWS::AccountId', 'stack/oc-papersubmission-angular-ui*/*' ]]
+
+
+
