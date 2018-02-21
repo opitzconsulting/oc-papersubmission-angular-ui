@@ -9,7 +9,6 @@ phases:
       - ng run ngbuild
       - UI_BUCKET=“$(aws cloudformation describe-stacks --stack-name ${STACK_NAME} --query ‘Stacks[?StackName==`${STACK_NAME}`].Outputs[*].{key:OutputKey, value:OutputValue}’ --output text)”
       - aws s3 sync dist "${UI_BUCKET}" --acl public-read --delete
-
 artifacts:
   type: zip
   files:
