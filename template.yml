@@ -1,17 +1,16 @@
 AWSTemplateFormatVersion: 2010-09-09
 
 Parameters:
-  S3Prefix:
-    Default: 'angular'
+  S3Bucket:
     Type: String
-    MaxLength: 10
+    MaxLength: 64
     Description: an Name to create distinct ressources for every member
 
 Resources:
   PapersubmissionUIBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Join ['-', [!Ref 'S3Prefix', !Ref 'AWS::AccountId', 'oc-papersubmission', 'ui']]
+      BucketName: !Ref 'S3Bucket'
       AccessControl: PublicRead
       WebsiteConfiguration:
         IndexDocument: index.html
