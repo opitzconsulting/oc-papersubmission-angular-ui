@@ -4,7 +4,6 @@ phases:
   build:
     commands:
       - pip install --upgrade awscli
-      - aws cloudformation deploy --template-file template.yml --stack-name $STACK_NAME
       - npm install
       - npm install -g @angular/cli
       - ng run ngbuild
