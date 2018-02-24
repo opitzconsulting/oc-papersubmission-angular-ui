@@ -1,11 +1,83 @@
 AWSTemplateFormatVersion: 2010-09-09
 
+Parameters:
+  GithubToken:
+    Type: String
+    Description: Github OAuth Token to checkout the code
+  UIBucket:
+    Type: String
+    MaxLength: 64
+    Description: an Name to create distinct ressources for every member
+  BuildNameSuffix:
+    Default: ''
+    Type: String
+    MaxLength: 64
+    Description: an Name to create distinct ressources for every member
+
 Resources:
+  DeploymentPipeBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref 'DeploymentPipeBucket'
+      PolicyDocument:
+        Id: SSEAndSSLPolicy
+        Version: 2012-10-17
+        Statement:
+          -
+            Sid: WhitelistedGet
+            Action:
+              - 's3:GetObject'
+              - 's3:GetObjectVersion'
+              - 's3:GetBucketVersioning'
+              - 's3:PutObject'
+            Effect: Allow
+            Condition:
+              Bool:
+                'aws:SecureTransport': false
+            Principal:
+              AWS:
+                - !GetAtt [CodePipelineTrustRole, Arn]
+                - !GetAtt [CodeBuildTrustRole, Arn]
+            Resource:
+              - !Join ['', ['arn:aws:s3:::', !Ref 'DeploymentPipeBucket']]
+              - !Join ['', ['arn:aws:s3:::', !Ref 'DeploymentPipeBucket', /*]]
+
+  DeploymentPipeBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Join ['', [!Ref 'BuildNameSuffix', !Join ['-', [!Ref 'AWS::AccountId', 'oc-papersubmission', 'pipe']]]]
+      Tags:
+        - {Key: Stackname, Value: !Ref 'AWS::StackName'}
+    DeletionPolicy: Delete
+
   DeveloperGroup:
     Type: AWS::IAM::Group
     Properties:
       GroupName: !Join ['-', [!Ref 'AWS::StackName', 'oc-papersubmission', 'Developer']]
       Path: "/angular_ui/"
+
+  DeveloperOwnStackPolicy:
+    Type: "AWS::IAM::ManagedPolicy"
+    Description: Policy that allows an Developer to crate his own Stack. Only Forntend and Backend without CI.
+    Properties:
+      ManagedPolicyName: !Join ['-', [!Ref 'AWS::StackName', 'Developer', 'Stack', 'Policy']]
+      Groups: [!Ref DeveloperGroup]
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          -
+            Effect: 'Allow'
+            Action:
+              - "s3:GetBucketLocation"
+              - "s3:ListAllMyBuckets"
+              - "s3:GetBucketAcl"
+              - "s3:GetBucketPolicy"
+            Resource: "*"
+          -
+            Effect: "Allow"
+            Action: "s3:*"
+            Resource:
+              - !Join ['', ['arn:aws:s3:::', !Ref 'AWS::AccountId', '-${aws:username}*']]
 
   DeveloperPolicy:
     Type: "AWS::IAM::ManagedPolicy"
@@ -17,22 +89,272 @@ Resources:
         Statement:
           -
             Effect: "Allow"
-            Action:
-              - "s3:CreateBucket"
-            Resource: !Join ['-', ['arn:aws:s3:::*', !Ref 'AWS::AccountId', 'oc-papersubmission', 'ui']]
+            Action: "s3:CreateBucket"
+            Resource: !Join ['', ['arn:aws:s3:::', !Ref 'UIBucket']]
           -
             Effect: "Allow"
-            Action:
-              - "s3:*"
+            Action: "s3:*"
             Resource:
-              - !Join ['-', ['arn:aws:s3:::*', !Ref 'AWS::AccountId', 'oc-papersubmission', 'ui']]
-              - !Join ['-', ['arn:aws:s3:::*', !Ref 'AWS::AccountId', 'oc-papersubmission', 'ui/*']]
+              - !Join ['', ['arn:aws:s3:::', !Ref 'UIBucket']]
+              - !Join ['', ['arn:aws:s3:::', !Ref 'UIBucket', '/*']]
           -
             Effect: "Allow"
             Action:
               - "cloudformation:*"
             Resource:
-              - !Join [':', ['arn:aws:cloudformation:eu-central-1', !Ref 'AWS::AccountId', 'stack/oc-papersubmission-angular-ui*/*' ]]
+              - !Join [':', ['arn:aws:cloudformation:eu-central-1', !Ref 'AWS::AccountId', 'stack/*-oc-papersubmission-angular-ui/*' ]]
 
+  CodePipelineTrustRole:
+    Type: "AWS::IAM::Role"
+    Description: Creating service role in IAM for AWS CodePipeline
+    Properties:
+      RoleName: !Join ['-', [!Ref 'AWS::StackName', CodePipeline, Role]]
+      Path: /
+      AssumeRolePolicyDocument:
+        Statement:
+          -
+            Action: 'sts:AssumeRole'
+            Effect: Allow
+            Principal:
+              Service: codepipeline.amazonaws.com
+            Sid: 1
+      Policies:
+        -
+          PolicyName: CodePipelineTrustRolePolicy
+          PolicyDocument:
+            Statement:
+              -
+                Action:
+                  - 's3:GetObject'
+                  - 's3:GetObjectVersion'
+                  - 's3:GetBucketVersioning'
+                  - 's3:PutObject'
+                Effect: Allow
+                Resource:
+                  - !Join ['', ['arn:aws:s3:::', !Ref 'DeploymentPipeBucket']]
+                  - !Join ['', ['arn:aws:s3:::', !Ref 'DeploymentPipeBucket', /* ]]
+              -
+                Effect: "Allow"
+                Action:
+                  - "s3:CreateBucket"
+                Resource: "*"
+              -
+                Action:
+                  - 'codebuild:StartBuild'
+                  - 'codebuild:BatchGetBuilds'
+                  - 'codebuild:StopBuild'
+                Effect: Allow
+                Resource:
+                  - !Join [':', ['arn:aws:codebuild:eu-central-1', !Ref 'AWS::AccountId', 'project/*oc-papersubmission-angular-ui-build' ]]
+              -
+                Action:
+                  - 'cloudformation:DescribeStacks'
+                  - 'cloudformation:DescribeChangeSet'
+                  - 'cloudformation:CreateChangeSet'
+                  - 'cloudformation:DeleteChangeSet'
+                  - 'cloudformation:ExecuteChangeSet'
+                Effect: Allow
+                Resource:
+                  - !Join [':', ['arn:aws:cloudformation:eu-central-1', !Ref 'AWS::AccountId', 'stack/*oc-papersubmission-angular-ui/*' ]]
+              -
+                Action: 'iam:PassRole'
+                Effect: Allow
+                Resource: !GetAtt [CloudFormationTrustRole, Arn]
 
+  CodeBuildTrustRole:
+    Type: "AWS::IAM::Role"
+    Description: Creating service role in IAM for AWS CodeBuild
+    Properties:
+      RoleName: !Join ['-', [!Ref 'AWS::StackName', CodeBuild, Role]]
+      Path: /
+      AssumeRolePolicyDocument:
+        Statement:
+          -
+            Action: 'sts:AssumeRole'
+            Effect: Allow
+            Principal:
+              Service: codebuild.amazonaws.com
+            Sid: 1
+      Policies:
+        -
+          PolicyName: CodeBuildTrustRolePolicy
+          PolicyDocument:
+            Statement:
+              -
+                Action:
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Effect: Allow
+                Resource: 'arn:aws:logs:eu-central-1:159501877559:log-group:/aws/codebuild/*:*'
+              -
+                Action: "s3:*"
+#                  - 's3:GetObject'
+#                  - 's3:GetObjectVersion'
+#                  - 's3:GetBucketVersioning'
+#                  - 's3:PutObject'
+                Effect: Allow
+                Resource: "*"
+#                  - !Join ['', ['arn:aws:s3:::', !Ref 'DeploymentPipeBucket']]
+#                  - !Join ['', ['arn:aws:s3:::', !Ref 'DeploymentPipeBucket', /* ]]
+#                  - !Join ['', ['arn:aws:s3:::', !Ref 'UIBucket']]
+#                  - !Join ['', ['arn:aws:s3:::', !Ref 'UIBucket', '/*']]
+              -
+                Action:
+                  - 'cloudformation:DescribeStacks'
+                Effect: Allow
+                Resource:
+                  - !Join [':', ['arn:aws:cloudformation:eu-central-1', !Ref 'AWS::AccountId', 'stack/*oc-papersubmission-angular-ui/*' ]]
+              -
+                Action:
+                  - 'ssm:GetParameters'
+                Effect: Allow
+                Resource: 'arn:aws:ssm:eu-central-1:159501877559:parameter/CodeBuild/*'
 
+  CloudFormationTrustRole:
+    Type: "AWS::IAM::Role"
+    Description: Creating service role in IAM for AWS CloudFormation
+    Properties:
+      RoleName: !Join ['-', [!Ref 'AWS::StackName', CloudFormation, Role]]
+      Path: /
+      AssumeRolePolicyDocument:
+        Statement:
+          -
+            Action: 'sts:AssumeRole'
+            Effect: Allow
+            Principal:
+              Service: cloudformation.amazonaws.com
+            Sid: 1
+      Policies:
+        -
+          PolicyName: CloudFormationTrustRolePolicy
+          PolicyDocument:
+            Statement:
+              -
+                Action:
+                  - 's3:GetObject'
+                  - 's3:GetObjectVersion'
+                  - 's3:GetBucketVersioning'
+                  - 's3:PutObject'
+                Effect: Allow
+                Resource:
+                  - !Join ['', ['arn:aws:s3:::', !Ref 'DeploymentPipeBucket']]
+                  - !Join ['', ['arn:aws:s3:::', !Ref 'DeploymentPipeBucket', /* ]]
+              -
+                Effect: "Allow"
+                Action:
+                  - "s3:*"
+                Resource:
+                   - !Join ['', ['arn:aws:s3:::', !Ref 'UIBucket']]
+                   - !Join ['', ['arn:aws:s3:::', !Ref 'UIBucket', '/*']]
+              -
+                Action:
+                  - 'cloudformation:DescribeStacks'
+                  - 'cloudformation:DescribeChangeSet'
+                  - 'cloudformation:CreateChangeSet'
+                  - 'cloudformation:DeleteChangeSet'
+                  - 'cloudformation:ExecuteChangeSet'
+                Effect: Allow
+                Resource:
+                  - !Join [':', ['arn:aws:cloudformation:eu-central-1', !Ref 'AWS::AccountId', 'stack/*oc-papersubmission-angular-ui/*' ]]
+
+  CodePipeline:
+    Type: "AWS::CodePipeline::Pipeline"
+    Description: The Buildpipeline that deploys the master branch to production
+    Properties:
+      Name: !Join ['-', [!Ref 'AWS::AccountId', 'oc-papersubmission-angular-ui' ]]
+      RoleArn: !GetAtt ['CodePipelineTrustRole', 'Arn']
+      ArtifactStore:
+        Type: 'S3'
+        Location: !Ref 'DeploymentPipeBucket'
+      Stages:
+        -
+          Name: 'Source'
+          Actions:
+            -
+              Name: 'Source'
+              ActionTypeId:
+                Category: 'Source'
+                Owner: 'ThirdParty'
+                Version: 1
+                Provider: "GitHub"
+              OutputArtifacts:
+                -
+                  Name: 'UISourceArtefact'
+              Configuration:
+                Owner: 'opitzconsulting'
+                Repo: 'oc-papersubmission-angular-ui'
+                PollForSourceChanges: 'true'
+                Branch: 'master'
+                OAuthToken: !Ref 'GithubToken'
+              RunOrder: 1
+        -
+          Name: 'Staging'
+          Actions:
+            -
+              InputArtifacts:
+                -
+                  Name: 'UISourceArtefact'
+              Name: 'oc-papersubmission-angular-ui'
+              ActionTypeId:
+                Category: 'Deploy'
+                Owner: 'AWS'
+                Version: '1'
+                Provider: 'CloudFormation'
+              Configuration:
+                StackName: 'oc-papersubmission-angular-ui'
+                ActionMode: 'CHANGE_SET_REPLACE'
+                RoleArn: !GetAtt [CloudFormationTrustRole, Arn]
+                ChangeSetName: 'oc-papersubmission-angular-ui-pipe'
+                TemplatePath: 'UISourceArtefact::template.yml'
+                ParameterOverrides: !Join ['', ['{"S3Bucket":"', !Ref 'UIBucket', '"}' ]]
+              RunOrder: 1
+            -
+              Name: 'Execute_ChangeSet'
+              ActionTypeId:
+                Category: 'Deploy'
+                Owner: 'AWS'
+                Version: '1'
+                Provider: 'CloudFormation'
+              OutputArtifacts: []
+              Configuration:
+                StackName: 'oc-papersubmission-angular-ui'
+                ActionMode: 'CHANGE_SET_EXECUTE'
+                ChangeSetName: 'oc-papersubmission-angular-ui-pipe'
+              RunOrder: 2
+            -
+              InputArtifacts:
+                -
+                  Name: 'UISourceArtefact'
+              Name: 'Build_App'
+              ActionTypeId:
+                Category: 'Build'
+                Owner: 'AWS'
+                Version: '1'
+                Provider: 'CodeBuild'
+              Configuration:
+                ProjectName: 'oc-papersubmission-angular-ui-build'
+              RunOrder: 3
+
+  CodeBuildProject:
+    Type: "AWS::CodeBuild::Project"
+    Properties:
+      Name: !Join ['', [!Ref 'BuildNameSuffix', 'oc-papersubmission-angular-ui-build' ]]
+      ServiceRole: !GetAtt ['CodeBuildTrustRole', 'Arn']
+      Source:
+        Type: CODEPIPELINE
+      Artifacts:
+        Packaging: 'NONE'
+        Type: 'CODEPIPELINE'
+        Name: 'oc-papersubmission-angular-ui-build'
+      Environment:
+        ComputeType: 'BUILD_GENERAL1_SMALL'
+        PrivilegedMode: false
+        Image: 'aws/codebuild/nodejs:6.3.1'
+        Type: 'LINUX_CONTAINER'
+        EnvironmentVariables:
+          -
+            Type: 'PLAINTEXT'
+            Name: 'STACK_NAME'
+            Value: 'oc-papersubmission-angular-ui'
+      TimeoutInMinutes: 60
