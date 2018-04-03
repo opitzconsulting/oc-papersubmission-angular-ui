@@ -1,27 +1,23 @@
-# PapersubmissionUi
+This is an Angular based UI for the OC Papersubmission System
+==============================================
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 1.7.1.
+This project needs the papersubmission-service deployed as an AWS Stack. 
+The papersubmission-service must be deployed first and can be found under the following url 
+[https://github.com/opitzconsulting/oc-papersubmission-services](https://github.com/opitzconsulting/oc-papersubmission-services)
 
-## Development server
+Generating environment Files
+---
+Before the UI can be used the environment File must be generated for use with the deployed papersubmission-service.
+To do that the cloudformation stack name for the papersubmission-service is required.
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The app will automatically reload if you change any of the source files.
+  ```bash
+  $ cd <projact-root>/build
+  $ node createEnvironment --api-stack-name <papersubmission-service stack name>
+  ```
+  
+After that the environment file for development is generated and the ui can be started with the following command
 
-## Code scaffolding
-
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
-
-## Build
-
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory. Use the `-prod` flag for a production build.
-
-## Running unit tests
-
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
-
-## Running end-to-end tests
-
-Run `ng e2e` to execute the end-to-end tests via [Protractor](http://www.protractortest.org/).
-
-## Further help
-
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI README](https://github.com/angular/angular-cli/blob/master/README.md).
+  ```bash
+  $ cd <project-root>
+  $ ng serve
+  ```

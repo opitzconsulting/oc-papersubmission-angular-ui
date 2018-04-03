@@ -1,11 +1,13 @@
 import { BrowserModule } from '@angular/platform-browser';
 import { NgModule } from '@angular/core';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { MatToolbarModule, MatIconModule } from '@angular/material';
+import {MatToolbarModule, MatIconModule, MatMenuModule} from '@angular/material';
 
 import { AppRoutingModule } from './app-routing.module';
 
 import { AppComponent } from './app.component';
+import {CognitoGuard} from "./cognito.guard";
+import {CognitoService} from "./aws/cognito.service";
 
 
 @NgModule({
@@ -17,9 +19,10 @@ import { AppComponent } from './app.component';
     AppRoutingModule,
     BrowserAnimationsModule,
     MatToolbarModule,
-    MatIconModule
+    MatIconModule,
+    MatMenuModule
   ],
-  providers: [],
+  providers: [CognitoGuard, CognitoService],
   bootstrap: [AppComponent]
 })
 export class AppModule { }
